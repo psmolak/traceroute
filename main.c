@@ -16,8 +16,10 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
-#include "config.h"
 #include "utils.h"
+
+#define MAX_TTL 64
+#define TIMEOUT 1
 
 static pid_t pid;
 static const char *usage = "Usage: ./traceroute x.x.x.x\n";
