@@ -73,7 +73,7 @@ static reply_t packet_to_reply(void *packet, struct timeval start,
   if (inet_ntop(AF_INET, &(IPHDR(packet)->saddr), reply.ip, INET_ADDRSTRLEN) == NULL)
     die("inet_ntop() failed with '%s'\n", strerror(errno));
   reply.rtt = timeval_diff(timestamp, start);
-  reply.type = ICMPHDR(packet)->type;
+  reply.type = TYPE(packet);
 
   return reply;
 }
