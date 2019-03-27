@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/time.h>
@@ -24,7 +23,7 @@
 static pid_t pid;
 static const char *usage = "Usage: ./traceroute x.x.x.x\n";
 
-static void send_icmp_echo(conn_t *con, int ttl) {
+static void send_icmp_echo(const conn_t *con, int ttl) {
   struct icmphdr hdr;
   struct sockaddr *addr = (struct sockaddr *)&con->addr;
 
@@ -42,7 +41,7 @@ static void send_icmp_echo(conn_t *con, int ttl) {
     die("sendto() failed with '%s'\n", strerror(errno));
 }
 
-static int valid_icmp_packet(void *packet, int ttl) {
+static int valid_icmp_packet(const void *packet, int ttl) {
   if (TYPE(packet) == ICMP_ECHOREPLY)
     return ID(packet) == pid && SEQUENCE(packet) == ttl;
 
@@ -52,7 +51,7 @@ static int valid_icmp_packet(void *packet, int ttl) {
   return false;
 }
 
-static int await_icmp_packet(conn_t *con, struct timeval *timeout) {
+static int await_icmp_packet(const conn_t *con, struct timeval *timeout) {
   int ready;
   fd_set fds;
 
@@ -67,7 +66,7 @@ static int await_icmp_packet(conn_t *con, struct timeval *timeout) {
   return ready;
 }
 
-static reply_t packet_to_reply(void *packet, struct timeval start,
+static reply_t packet_to_reply(const void *packet, struct timeval start,
                                struct timeval timestamp) {
   reply_t reply;
 
@@ -79,7 +78,7 @@ static reply_t packet_to_reply(void *packet, struct timeval start,
   return reply;
 }
 
-static int get_icmp_replies(conn_t *con, int ttl, reply_t replies[]) {
+static int get_icmp_replies(const conn_t *con, reply_t replies[], int ttl) {
   int n = 0;
   packet_t packet;
   struct timeval start, timestamp, timeout;
@@ -118,7 +117,7 @@ static void print_raport(reply_t replies[], int n, int ttl) {
     printf("%lldms\n", avg / n / 1000);
 }
 
-static int traceroute(conn_t *con) {
+static int traceroute(const conn_t *con) {
   int ttl, n;
   reply_t replies[3];
 
@@ -127,7 +126,7 @@ static int traceroute(conn_t *con) {
     send_icmp_echo(con, ttl);
     send_icmp_echo(con, ttl);
 
-    n = get_icmp_replies(con, ttl, replies);
+    n = get_icmp_replies(con, replies, ttl);
     print_raport(replies, n, ttl);
 
     if (n > 0 && replies[0].type == ICMP_ECHOREPLY)
@@ -161,5 +160,5 @@ int main(int argc, char *argv[]) {
     die("getpid() failed with '%s'\n", strerror(errno));
 
   connection = makecon(argv[1]);
-  exit(traceroute(&connection));
+  return traceroute(&connection);
 }
