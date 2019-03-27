@@ -1,14 +1,13 @@
 PROGRAM := traceroute
 ARCHIVE := pawel_smolak.tar.bz2
-FILES := main.c checksum.c checksum.h Makefile
+FILES := main.c misc.c misc.h checksum.c checksum.h Makefile
 CFLAGS := -std=c99 -pedantic -Wall -Wextra -Werror
 
 
-$(PROGRAM): main.o checksum.o
+$(PROGRAM): main.o misc.o checksum.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-main.c: checksum.h
-checksum.c: checksum.h
+main.c: config.h checksum.h misc.h
 
 pack: $(ARCHIVE)
 
@@ -19,10 +18,13 @@ pack: $(ARCHIVE)
 	bzip2 --force $*.tar
 	rm -rf $*
 
+format:
+	clang-format -style=file -i *.c *.h
+
 clean:
 	rm -rf *.o
 
 distclean: clean
 	rm -rf $(PROGRAM) $(ARCHIVE)
 
-.PHONY: clean distclean pack
+.PHONY: clean distclean pack format
