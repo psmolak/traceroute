@@ -1,6 +1,6 @@
 PROGRAM := traceroute
 ARCHIVE := pawel_smolak.tar.bz2
-FILES := main.c misc.c misc.h checksum.c checksum.h Makefile
+FILES := main.c config.h misc.c misc.h checksum.c checksum.h Makefile
 CFLAGS := -std=c99 -pedantic -Wall -Wextra -Werror
 
 
