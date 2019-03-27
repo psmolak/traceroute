@@ -9,12 +9,13 @@
 #define true 1
 #define false 0
 
-#define IPHDR(ptr)      ((struct iphdr *)(ptr))
-#define ICMPHDR(ptr)    ((struct icmphdr *)((char *)ptr + 4 * IPHDR(ptr)->ihl))
-#define INNER(ptr)      ((char *) ((char *)(ICMPHDR(ptr)) + sizeof(struct icmphdr)))
-#define ID(ptr)         (ICMPHDR(ptr)->un.echo.id)
-#define SEQUENCE(ptr)   (ICMPHDR(ptr)->un.echo.sequence)
-#define TYPE(ptr)       (ICMPHDR(ptr)->type)
+#define IPHDR(ptr)    ((struct iphdr *)(ptr))
+#define ICMPHDR(ptr)  ((struct icmphdr *)((char *)ptr + 4 * IPHDR(ptr)->ihl))
+#define INNER(ptr)    ((char *)((char *)(ICMPHDR(ptr)) + sizeof(struct icmphdr)))
+
+#define ID(ptr)       (ICMPHDR(ptr)->un.echo.id)
+#define SEQUENCE(ptr) (ICMPHDR(ptr)->un.echo.sequence)
+#define TYPE(ptr)     (ICMPHDR(ptr)->type)
 
 typedef uint8_t packet_t[IP_MAXPACKET];
 
@@ -30,7 +31,7 @@ typedef struct {
 } reply_t;
 
 void die(const char *fmt, ...);
-conn_t makecon(const char* ip);
+conn_t makecon(const char *ip);
 struct timeval timeval_diff(struct timeval a, struct timeval b);
 
 #endif

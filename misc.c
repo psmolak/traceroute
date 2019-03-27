@@ -35,7 +35,7 @@ struct timeval timeval_diff(struct timeval a, struct timeval b) {
   return diff;
 }
 
-conn_t makecon(const char* ip) {
+conn_t makecon(const char *ip) {
   conn_t con;
   memset(&con.addr, 0, sizeof(con.addr));
   con.addr.sin_family = AF_INET;

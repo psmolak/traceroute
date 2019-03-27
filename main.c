@@ -20,14 +20,12 @@
 #include "config.h"
 #include "misc.h"
 
-
 static pid_t pid;
 static const char *usage = "Usage: ./traceroute x.x.x.x\n";
 
-
 static void send_icmp_echo(conn_t *con, int ttl) {
   struct icmphdr hdr;
-  struct sockaddr *addr = (struct sockaddr*)&con->addr;
+  struct sockaddr *addr = (struct sockaddr *)&con->addr;
 
   memset(&hdr, 0, sizeof(hdr));
   hdr.type = ICMP_ECHO;
@@ -68,7 +66,8 @@ static int await_icmp_packet(conn_t *con, struct timeval *timeout) {
   return ready;
 }
 
-static reply_t packet_to_reply(void *packet, struct timeval start, struct timeval timestamp) {
+static reply_t packet_to_reply(void *packet, struct timeval start,
+                               struct timeval timestamp) {
   reply_t reply;
 
   if (inet_ntop(AF_INET, &(IPHDR(packet)->saddr), reply.ip, INET_ADDRSTRLEN) == NULL)
@@ -115,7 +114,7 @@ static void print_raport(reply_t replies[], int n, int ttl) {
   }
 
   if (n)
-    printf("%lldms\n", avg/n/1000);
+    printf("%lldms\n", avg / n / 1000);
 }
 
 static int traceroute(conn_t *con) {
