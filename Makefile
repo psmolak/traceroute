@@ -1,13 +1,13 @@
 PROGRAM := traceroute
 ARCHIVE := pawel_smolak.tar.bz2
-FILES := main.c config.h misc.c misc.h checksum.c checksum.h Makefile
+FILES := main.c config.h misc.c misc.h Makefile
 CFLAGS := -std=c99 -pedantic -Wall -Wextra -Werror
 
 
-$(PROGRAM): main.o misc.o checksum.o
+$(PROGRAM): main.o misc.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-main.c: config.h checksum.h misc.h
+main.c: config.h misc.h
 
 pack: $(ARCHIVE)
 

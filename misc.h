@@ -32,6 +32,7 @@ typedef struct {
 
 void die(const char *fmt, ...);
 conn_t makecon(const char *ip);
+uint16_t checksum(const void *data, int len);
 struct timeval timeval_diff(struct timeval a, struct timeval b);
 
 #endif

@@ -16,7 +16,6 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
-#include "checksum.h"
 #include "config.h"
 #include "misc.h"
 
