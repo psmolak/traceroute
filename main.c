@@ -135,6 +135,20 @@ static int traceroute(conn_t *con) {
   return ttl < MAX_TTL ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
+static conn_t makecon(const char *ip) {
+  conn_t con;
+  memset(&con.addr, 0, sizeof(con.addr));
+  con.addr.sin_family = AF_INET;
+
+  if (inet_pton(AF_INET, ip, &con.addr.sin_addr) == 0)
+    die("Provided IP address '%s' is invalid\n", ip);
+
+  if ((con.sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
+    die("socket() failed with '%s'\n", strerror(errno));
+
+  return con;
+}
+
 int main(int argc, char *argv[]) {
   conn_t connection;
 

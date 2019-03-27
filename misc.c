@@ -11,7 +11,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <sys/time.h>
-#include <arpa/inet.h>
 
 #include "misc.h"
 
@@ -49,18 +48,4 @@ uint16_t checksum(const void *data, int len) {
   sum = (sum >> 16) + (sum & 0xffff);
   sum = ~(sum + (sum >> 16));
   return sum;
-}
-
-conn_t makecon(const char *ip) {
-  conn_t con;
-  memset(&con.addr, 0, sizeof(con.addr));
-  con.addr.sin_family = AF_INET;
-
-  if (inet_pton(AF_INET, ip, &con.addr.sin_addr) == 0)
-    die("Provided IP address '%s' is invalid\n", ip);
-
-  if ((con.sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
-    die("socket() failed with '%s'\n", strerror(errno));
-
-  return con;
 }
