@@ -1,5 +1,5 @@
-#ifndef MISC_H
-#define MISC_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <sys/time.h>
 #include <stdarg.h>

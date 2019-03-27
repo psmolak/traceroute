@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <sys/time.h>
 
-#include "misc.h"
+#include "utils.h"
 
 void die(const char *fmt, ...) {
   va_list args;

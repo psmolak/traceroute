@@ -17,7 +17,7 @@
 #include <netinet/ip_icmp.h>
 
 #include "config.h"
-#include "misc.h"
+#include "utils.h"
 
 static pid_t pid;
 static const char *usage = "Usage: ./traceroute x.x.x.x\n";
