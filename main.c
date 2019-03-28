@@ -12,18 +12,45 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
-#include <netinet/ip.h>
-#include <netinet/ip_icmp.h>
 
 #include "utils.h"
 
-#define MAX_TTL 64
+#define TTLMAX 64
+#define ECHOMAX 3
 #define TIMEOUT 1
+
+static void raport(reply_t replies[], int n, int ttl);
+static void send_icmp_echo(const conn_t *con, int ttl);
+static int valid_icmp_packet(const void *packet, int ttl);
+static int await_icmp_packet(const conn_t *con, struct timeval *timeout);
+static int get_icmp_replies(const conn_t *con, reply_t replies[], int ttl);
+static int traceroute(const conn_t *con);
+static conn_t makecon(const char *ip);
 
 static pid_t pid;
 static const char *usage = "Usage: ./traceroute x.x.x.x\n";
 
-static void send_icmp_echo(const conn_t *con, int ttl) {
+void raport(reply_t replies[], int n, int ttl) {
+  long long avg = 0;
+
+  printf("%d ", ttl);
+  for (int dupl = 0, i = 0; i < n; dupl = 0, i++) {
+    avg += replies[i].rtt.tv_usec;
+    for (int j = i + 1; j < n && !dupl; j++)
+      dupl = strcmp(replies[i].ip, replies[j].ip) == 0;
+    if (!dupl)
+      printf("%s ", replies[i].ip);
+  }
+
+  if (n == ECHOMAX)
+    printf("%lldms\n", avg / n / 1000);
+  else if (n > 0)
+    printf("???\n");
+  else
+    printf("*\n");
+}
+
+void send_icmp_echo(const conn_t *con, int ttl) {
   struct icmphdr hdr;
   struct sockaddr *addr = (struct sockaddr *)&con->addr;
 
@@ -41,7 +68,7 @@ static void send_icmp_echo(const conn_t *con, int ttl) {
     die("sendto() failed with '%s'\n", strerror(errno));
 }
 
-static int valid_icmp_packet(const void *packet, int ttl) {
+int valid_icmp_packet(const void *packet, int ttl) {
   if (TYPE(packet) == ICMP_ECHOREPLY)
     return ID(packet) == pid && SEQUENCE(packet) == ttl;
 
@@ -51,12 +78,12 @@ static int valid_icmp_packet(const void *packet, int ttl) {
   return false;
 }
 
-static int await_icmp_packet(const conn_t *con, struct timeval *timeout) {
+int await_icmp_packet(const conn_t *con, struct timeval *timeout) {
   int ready;
   fd_set fds;
 
   if (timeout->tv_sec <= 0 && timeout->tv_usec <= 0)
-    return false;
+    return 0;
 
   FD_ZERO(&fds);
   FD_SET(con->sock, &fds);
@@ -66,7 +93,7 @@ static int await_icmp_packet(const conn_t *con, struct timeval *timeout) {
   return ready;
 }
 
-static reply_t packet_to_reply(const void *packet, struct timeval start,
+reply_t packet_to_reply(const void *packet, struct timeval start,
                                struct timeval timestamp) {
   reply_t reply;
 
@@ -78,7 +105,7 @@ static reply_t packet_to_reply(const void *packet, struct timeval start,
   return reply;
 }
 
-static int get_icmp_replies(const conn_t *con, reply_t replies[], int ttl) {
+int get_icmp_replies(const conn_t *con, reply_t replies[], int ttl) {
   int n = 0;
   packet_t packet;
   struct timeval start, timestamp, timeout;
@@ -87,7 +114,7 @@ static int get_icmp_replies(const conn_t *con, reply_t replies[], int ttl) {
   timeout.tv_sec = TIMEOUT;
   timeout.tv_usec = 0;
 
-  while (n < 3 && await_icmp_packet(con, &timeout)) {
+  while (n < ECHOMAX && await_icmp_packet(con, &timeout)) {
     gettimeofday(&timestamp, NULL);
 
     if (recvfrom(con->sock, packet, IP_MAXPACKET, 0, NULL, NULL) < 0)
@@ -100,43 +127,25 @@ static int get_icmp_replies(const conn_t *con, reply_t replies[], int ttl) {
   return n;
 }
 
-static void print_raport(reply_t replies[], int n, int ttl) {
-  long long avg = 0;
-
-  printf("%d ", ttl);
-
-  if (!n)
-    printf("*\n");
-
-  for (int i = 0; i < n; i++) {
-    printf("%s ", replies[i].ip);
-    avg += replies[i].rtt.tv_usec;
-  }
-
-  if (n)
-    printf("%lldms\n", avg / n / 1000);
-}
-
-static int traceroute(const conn_t *con) {
+int traceroute(const conn_t *con) {
   int ttl, n;
-  reply_t replies[3];
+  reply_t replies[ECHOMAX];
 
-  for (ttl = 1; ttl <= MAX_TTL; ttl++) {
-    send_icmp_echo(con, ttl);
-    send_icmp_echo(con, ttl);
-    send_icmp_echo(con, ttl);
+  for (ttl = 1; ttl <= TTLMAX; ttl++) {
+    for (int i = 0; i < ECHOMAX; i++)
+      send_icmp_echo(con, ttl);
 
     n = get_icmp_replies(con, replies, ttl);
-    print_raport(replies, n, ttl);
+    raport(replies, n, ttl);
 
     if (n > 0 && replies[0].type == ICMP_ECHOREPLY)
       break;
   }
 
-  return ttl < MAX_TTL ? EXIT_SUCCESS : EXIT_FAILURE;
+  return ttl < TTLMAX ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-static conn_t makecon(const char *ip) {
+conn_t makecon(const char *ip) {
   conn_t con;
   memset(&con.addr, 0, sizeof(con.addr));
   con.addr.sin_family = AF_INET;
@@ -151,7 +160,7 @@ static conn_t makecon(const char *ip) {
 }
 
 int main(int argc, char *argv[]) {
-  conn_t connection;
+  conn_t con;
 
   if (argc != 2)
     die("Wrong number of arguments\n%s", usage);
@@ -159,6 +168,6 @@ int main(int argc, char *argv[]) {
   if ((pid = getpid()) < 0)
     die("getpid() failed with '%s'\n", strerror(errno));
 
-  connection = makecon(argv[1]);
-  return traceroute(&connection);
+  con = makecon(argv[1]);
+  return traceroute(&con);
 }
