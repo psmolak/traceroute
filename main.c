@@ -15,7 +15,7 @@
 
 #include "utils.h"
 
-#define TTLMAX 64
+#define TTLMAX 32
 #define ECHOMAX 3
 #define TIMEOUT 1
 
